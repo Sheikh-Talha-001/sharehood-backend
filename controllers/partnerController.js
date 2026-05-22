@@ -121,10 +121,19 @@ const applyAsPartner = asyncHandler(async (req, res, next) => {
     experienceDescription,
   } = req.body;
 
+  // --- Auto-resolve/fallback for missing or empty string fields ---
+  // The dashboard application form is simplified and only collects categories and experience.
+  // We resolve the remaining required fields from the authenticated user's profile to prevent 400 errors.
+  const resolvedFullName = (fullName && fullName.trim()) !== "" ? fullName.trim() : req.user.name;
+  const resolvedPhoneNumber = (phoneNumber && phoneNumber.trim()) !== "" ? phoneNumber.trim() : (req.user.phoneNumber || "Not Provided");
+  const resolvedReasonForJoining = (reasonForJoining && reasonForJoining.trim()) !== "" ? reasonForJoining.trim() : (experienceDescription && experienceDescription.trim() ? experienceDescription.trim() : "To share items with the community.");
+  const resolvedCity = (city && city.trim()) !== "" ? city.trim() : (req.user.neighborhood || "Local Community");
+  const resolvedExperienceDescription = experienceDescription ? experienceDescription.trim() : "";
+
   // Validate required fields explicitly for clear error messages
   // (Mongoose validation would also catch these, but the messages
   // would be less user-friendly for missing fields)
-  if (!fullName || !phoneNumber || !reasonForJoining || !experienceDescription || !city) {
+  if (!resolvedFullName || !resolvedPhoneNumber || !resolvedReasonForJoining || !resolvedExperienceDescription || !resolvedCity) {
     return next(
       new ErrorResponse(
         "Please provide all required fields: fullName, phoneNumber, reasonForJoining, experienceDescription, city",
@@ -150,13 +159,13 @@ const applyAsPartner = asyncHandler(async (req, res, next) => {
   // --- Create the partner application ---
   const application = await PartnerApplication.create({
     user: userId,
-    fullName,
-    phoneNumber,
+    fullName: resolvedFullName,
+    phoneNumber: resolvedPhoneNumber,
     categoriesInterestedIn,
-    reasonForJoining,
+    reasonForJoining: resolvedReasonForJoining,
     businessName: businessName || "",
-    city,
-    experienceDescription,
+    city: resolvedCity,
+    experienceDescription: resolvedExperienceDescription,
     // status defaults to "pending" in the schema
   });
 

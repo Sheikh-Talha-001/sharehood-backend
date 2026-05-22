@@ -10,10 +10,7 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
-const path = require("path");
 const helmet = require("helmet");
-const mongoSanitize = require("express-mongo-sanitize");
-const xss = require("xss-clean");
 const rateLimit = require("express-rate-limit");
 
 // --- 3. Internal Imports ---
@@ -36,16 +33,84 @@ connectDB();
 
 // --- 5. Initialize Express App ---
 const app = express();
+
+// Railway runs behind a reverse proxy — required for:
+//   - express-rate-limit to see real client IPs
+//   - secure cookies to be set correctly
 app.set("trust proxy", 1);
 
-// --- 6. Core Middleware ---
+// --- 6. CORS Configuration (MUST be first middleware) ---
+// In a cross-origin deployment (Vercel frontend ↔ Railway backend),
+// CORS must be configured BEFORE any other middleware processes the request.
+// Otherwise, preflight OPTIONS requests will be rejected before reaching CORS.
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean); // Remove undefined/null entries
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true, // Required for HttpOnly cookie auth
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// --- 7. Core Middleware ---
 app.use(helmet());
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(mongoSanitize());
-app.use(xss());
 
-// Rate Limiting (100 requests per 15 minutes)
+// ============================================================
+// CUSTOM INPUT SANITIZATION (Express 5 compatible)
+// ============================================================
+// express-mongo-sanitize v2 and xss-clean v0.1.4 crash on Express 5
+// because they try to MUTATE req.query, which is a read-only getter
+// in Express 5. This custom middleware provides the same NoSQL injection
+// protection without mutating req.query directly.
+//
+// What it does:
+//   1. Strips keys containing $ or . from req.body and req.params
+//      (prevents MongoDB operator injection like { "$gt": "" })
+//   2. Does NOT touch req.query (Express 5 handles query safely)
+// ============================================================
+const sanitizeObject = (obj) => {
+  if (obj && typeof obj === "object") {
+    for (const key of Object.keys(obj)) {
+      if (key.startsWith("$") || key.includes(".")) {
+        delete obj[key];
+      } else if (typeof obj[key] === "object") {
+        sanitizeObject(obj[key]);
+      }
+    }
+  }
+};
+
+app.use((req, res, next) => {
+  if (req.body) sanitizeObject(req.body);
+  if (req.params) sanitizeObject(req.params);
+  next();
+});
+
+// Logging
+if (process.env.NODE_ENV !== "production") {
+  app.use(morgan("dev"));
+} else {
+  app.use(morgan("combined"));
+}
+
+// Rate Limiting (100 requests per 15 minutes per IP)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -54,16 +119,7 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
-    credentials: true,
-  })
-);
-app.use(morgan("dev"));
-app.use(cookieParser());
-
-// --- 7. API Routes ---
+// --- 8. API Routes ---
 
 // Silence browser auto-requests
 app.get("/favicon.ico", (req, res) => res.status(204).end());
@@ -74,6 +130,7 @@ app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
     message: "ShareHood API Running 🚀",
+    environment: process.env.NODE_ENV || "development",
   });
 });
 
@@ -111,19 +168,15 @@ app.use("/api/users", userRoutes);
 // Dashboard: GET /api/dashboard/user-summary | GET /admin-summary
 app.use("/api/dashboard", dashboardRoutes);
 
-// --- 8. Serve Frontend ---
-app.use(express.static(path.join(__dirname, "../frontend/dist")));
-
-app.get(/(.*)/, (req, res) => {
-  res.sendFile(path.resolve(__dirname, "../frontend", "dist", "index.html"));
-});
-
 // --- 9. Error Handling (MUST be after all routes) ---
 app.use(notFound);
 app.use(errorHandler);
 
-// Start Server
+// --- 10. Start Server ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
+  console.log(`📦 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`🌐 Allowed CORS origins: ${allowedOrigins.join(", ")}`);
+  console.log(`🔐 Secure cookies: ${process.env.NODE_ENV === "production"}`);
 });
