@@ -63,11 +63,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// Apply CORS to all routes
+// Apply CORS globally to all routes (handles preflight OPTIONS requests too)
 app.use(cors(corsOptions));
-
-// Explicitly handle OPTIONS preflight for all routes
-app.options("*", cors(corsOptions));
 
 // --- 7. Core Middleware ---
 // Helmet sets security headers but can conflict with CORS.
