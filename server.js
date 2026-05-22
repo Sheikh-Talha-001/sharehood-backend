@@ -36,39 +36,48 @@ const app = express();
 
 // Railway runs behind a reverse proxy — required for:
 //   - express-rate-limit to see real client IPs
-//   - secure cookies to be set correctly
+//   - secure cookies to be set correctly behind HTTPS proxy
 app.set("trust proxy", 1);
 
-// --- 6. CORS Configuration (MUST be first middleware) ---
-// In a cross-origin deployment (Vercel frontend ↔ Railway backend),
-// CORS must be configured BEFORE any other middleware processes the request.
-// Otherwise, preflight OPTIONS requests will be rejected before reaching CORS.
+// --- 6. CORS Configuration (MUST be the very first middleware) ---
+// Browsers send the Origin header WITHOUT a trailing slash.
+// Every origin in this list must match exactly — no trailing slashes.
 const allowedOrigins = [
-  process.env.CLIENT_URL,
+  "https://sharhood-frontend.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
-  "https://sharhood-frontend.vercel.app/",
-].filter(Boolean); // Remove undefined/null entries
+];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, curl, server-to-server)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      console.warn(`[CORS] Blocked request from origin: ${origin}`);
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true, // Required for HttpOnly cookie auth
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    console.warn(`[CORS] Blocked request from origin: ${origin}`);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// Apply CORS to all routes
+app.use(cors(corsOptions));
+
+// Explicitly handle OPTIONS preflight for all routes
+app.options("*", cors(corsOptions));
 
 // --- 7. Core Middleware ---
-app.use(helmet());
+// Helmet sets security headers but can conflict with CORS.
+// crossOriginResourcePolicy: false prevents helmet from blocking
+// cross-origin responses to credentialed requests.
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -80,11 +89,6 @@ app.use(express.urlencoded({ extended: true }));
 // because they try to MUTATE req.query, which is a read-only getter
 // in Express 5. This custom middleware provides the same NoSQL injection
 // protection without mutating req.query directly.
-//
-// What it does:
-//   1. Strips keys containing $ or . from req.body and req.params
-//      (prevents MongoDB operator injection like { "$gt": "" })
-//   2. Does NOT touch req.query (Express 5 handles query safely)
 // ============================================================
 const sanitizeObject = (obj) => {
   if (obj && typeof obj === "object") {
@@ -139,7 +143,6 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 
 // Items: POST/GET /api/items | GET /api/items/categories | GET /api/items/my-items | GET/PUT/DELETE /api/items/:id
-// Search: ?search=drill | Filter: ?category=Tools&condition=good&available=true&verifiedOnly=true | Sort: ?sort=newest | Page: ?page=2&limit=12
 app.use("/api/items", itemRoutes);
 
 // Requests: POST /api/requests | GET /my-requests, /received | PUT /:id/approve, /reject, /cancel, /return
@@ -151,7 +154,7 @@ app.use("/api/agreements", agreementRoutes);
 // Verification: POST /api/verification/submit | GET /api/verification/status
 app.use("/api/verification", verificationRoutes);
 
-// Admin: GET /api/admin/dashboard, /users, /reports, /verifications | PUT suspend, activate, resolve, dismiss, remove, restore, approve, reject
+// Admin: GET /api/admin/dashboard, /users, /reports, /verifications
 app.use("/api/admin", adminRoutes);
 
 // Reports: POST /api/reports | GET /api/reports/my-reports
