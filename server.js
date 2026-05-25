@@ -67,7 +67,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Explicitly handle OPTIONS preflight for all routes
-app.options("*", cors(corsOptions));
+app.options(/(.*)/, cors(corsOptions));
 
 // --- 7. Core Middleware ---
 // Helmet sets security headers but can conflict with CORS.
