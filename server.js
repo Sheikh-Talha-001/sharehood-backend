@@ -66,6 +66,9 @@ const corsOptions = {
 // Apply CORS globally to all routes (handles preflight OPTIONS requests too)
 app.use(cors(corsOptions));
 
+// Explicitly handle OPTIONS preflight for all routes
+app.options(/(.*)/, cors(corsOptions));
+
 // --- 7. Core Middleware ---
 // Helmet sets security headers but can conflict with CORS.
 // crossOriginResourcePolicy: false prevents helmet from blocking
@@ -126,6 +129,9 @@ app.use("/api", limiter);
 // Silence browser auto-requests
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.get("/.well-known/appspecific/com.chrome.devtools.json", (req, res) => res.status(204).end());
+
+// Silence socket.io polling requests since WebSocket/Socket.io is not implemented in this backend version
+app.all(/\/socket.io\/.*/, (req, res) => res.status(404).end());
 
 // Health check
 app.get("/", (req, res) => {
