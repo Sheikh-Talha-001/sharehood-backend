@@ -87,8 +87,15 @@ const notify = async ({
     // ═══════════════════════════════════════════════════════
     //
     // REAL-TIME (Socket.io):
-    //   const { getIO } = require("../socket");
-    //   getIO().to(recipient.toString()).emit("new_notification", notification);
+    try {
+      const { getIO } = require("../socket");
+      const io = getIO();
+      if (io) {
+        io.to(recipient.toString()).emit("new_notification", notification);
+      }
+    } catch (socketErr) {
+      console.error("[notify] Socket emit failed:", socketErr.message);
+    }
     //
     // EMAIL (Nodemailer / SendGrid):
     //   const emailService = require("./emailService");

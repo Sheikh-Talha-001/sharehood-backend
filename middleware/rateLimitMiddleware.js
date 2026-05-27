@@ -71,7 +71,7 @@ const appealRateLimiter = rateLimit({
 // ============================================================
 const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,
+  max: 20,  // Raised from 10 — allows normal usage while still blocking brute-force
   message: {
     success: false,
     message:

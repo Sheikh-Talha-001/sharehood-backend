@@ -115,12 +115,25 @@ if (process.env.NODE_ENV !== "production") {
   app.use(morgan("combined"));
 }
 
-// Rate Limiting (100 requests per 15 minutes per IP)
+// Global Rate Limiter — 500 requests per 15 minutes per IP
+// Login has its own stricter limiter (10/15min) applied separately in authRoutes.
+// 500 is generous enough for active development (multiple tabs, hot reload, etc.)
+// while still protecting against basic DoS attempts.
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500,                  // Raised from 100 → much more dev-friendly
   standardHeaders: true,
   legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many requests from this IP, please try again in 15 minutes."
+  },
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      error: "Too many requests. Please slow down and try again in 15 minutes."
+    });
+  }
 });
 app.use("/api", limiter);
 
@@ -129,9 +142,6 @@ app.use("/api", limiter);
 // Silence browser auto-requests
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.get("/.well-known/appspecific/com.chrome.devtools.json", (req, res) => res.status(204).end());
-
-// Silence socket.io polling requests since WebSocket/Socket.io is not implemented in this backend version
-app.all(/\/socket.io\/.*/, (req, res) => res.status(404).end());
 
 // Health check
 app.get("/", (req, res) => {
@@ -181,7 +191,14 @@ app.use(errorHandler);
 
 // --- 10. Start Server ---
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const http = require("http");
+const server = http.createServer(app);
+
+// Initialize Socket.io
+const socketModule = require("./socket");
+socketModule.init(server);
+
+server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`📦 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🌐 Allowed CORS origins: ${allowedOrigins.join(", ")}`);
