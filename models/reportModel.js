@@ -122,6 +122,7 @@ reportSchema.index({ status: 1, createdAt: -1 });    // Admin review queue
 reportSchema.index({ reportedBy: 1, createdAt: -1 }); // User's own reports
 reportSchema.index({ reportedUser: 1 });              // Reports against a user
 reportSchema.index({ reportedItem: 1 });              // Reports against an item
+reportSchema.index({ createdAt: -1 });
 
 const Report = mongoose.model("Report", reportSchema);
 

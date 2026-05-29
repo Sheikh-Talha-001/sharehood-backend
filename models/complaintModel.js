@@ -63,6 +63,7 @@ const complaintSchema = new mongoose.Schema(
 // Indexes
 complaintSchema.index({ owner: 1, createdAt: -1 });
 complaintSchema.index({ status: 1, createdAt: -1 });
+complaintSchema.index({ createdAt: -1 });
 
 const Complaint = mongoose.model("Complaint", complaintSchema);
 

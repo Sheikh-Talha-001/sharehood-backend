@@ -497,7 +497,8 @@ const getMyItems = asyncHandler(async (req, res, next) => {
   const items = await Item.find({ owner: req.user._id })
     .populate("owner", "name verificationStatus")
     .select("-__v")
-    .sort("-createdAt");
+    .sort("-createdAt")
+    .lean();
 
   res.status(200).json({
     success: true,

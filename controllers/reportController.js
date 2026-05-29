@@ -126,7 +126,8 @@ const getMyReports = asyncHandler(async (req, res, next) => {
     .populate("reportedUser", "name email")
     .populate("reportedItem", "title image")
     .select("-adminNotes") // Hide admin-only notes from users
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   res.status(200).json({
     success: true,

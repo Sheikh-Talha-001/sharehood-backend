@@ -136,7 +136,8 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 
   const users = await User.find(filter)
     .select("-password")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   res.status(200).json({
     success: true,
@@ -298,7 +299,8 @@ const getAllReports = asyncHandler(async (req, res, next) => {
     .populate("reportedUser", "name email isSuspended")
     .populate("reportedItem", "title image isRemovedByAdmin")
     .populate("reviewedBy", "name email")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   res.status(200).json({
     success: true,
@@ -424,7 +426,8 @@ const dismissReport = asyncHandler(async (req, res, next) => {
 const getAllItems = asyncHandler(async (req, res, next) => {
   const items = await Item.find()
     .populate("owner", "name email isSuspended")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   res.status(200).json({
     success: true,
@@ -561,7 +564,8 @@ const getAllVerifications = asyncHandler(async (req, res, next) => {
   const verifications = await VerificationRequest.find(filter)
     .populate("user", "name email verificationStatus createdAt")
     .populate("reviewedBy", "name email")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   res.status(200).json({
     success: true,

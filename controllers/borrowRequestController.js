@@ -216,7 +216,8 @@ const createBorrowRequest = asyncHandler(async (req, res, next) => {
 const getMyBorrowRequests = asyncHandler(async (req, res, next) => {
   const requests = await BorrowRequest.find({ borrower: req.user._id })
     .populate(POPULATE_OPTIONS)
-    .sort({ createdAt: -1 }); // -1 = descending (newest first)
+    .sort({ createdAt: -1 })
+    .lean();
 
   res.status(200).json({
     success: true,
@@ -243,7 +244,8 @@ const getMyBorrowRequests = asyncHandler(async (req, res, next) => {
 const getRequestsForMyItems = asyncHandler(async (req, res, next) => {
   const requests = await BorrowRequest.find({ owner: req.user._id })
     .populate(POPULATE_OPTIONS)
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   res.status(200).json({
     success: true,

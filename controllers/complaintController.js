@@ -102,7 +102,8 @@ const getMyComplaints = asyncHandler(async (req, res, next) => {
     .populate("borrower", "name email isVerified")
     .populate("item", "title image images")
     .populate("agreement", "agreementNumber expectedReturnDate borrowDate")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   res.status(200).json({
     success: true,

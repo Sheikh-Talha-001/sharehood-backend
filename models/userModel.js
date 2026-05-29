@@ -235,6 +235,14 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+// =========================================================
+// INDEXES
+// =========================================================
+userSchema.index({ email: 1 });
+userSchema.index({ isSuspended: 1, createdAt: -1 });
+userSchema.index({ verificationStatus: 1, createdAt: -1 });
+userSchema.index({ partnerStatus: 1, createdAt: -1 });
+
 // ------------------------------------------------------------
 // FIXED: Removed 'next' from async function arguments
 // ------------------------------------------------------------
