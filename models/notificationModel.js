@@ -73,15 +73,25 @@ const notificationSchema = new mongoose.Schema(
           "borrow_request",       // Owner: someone wants your item
           "request_approved",     // Borrower: your request was approved
           "request_rejected",     // Borrower: your request was rejected
+          "request_cancelled",    // Owner: borrower cancelled their request
           "item_returned",        // Borrower: owner marked item returned
           "agreement_generated",  // Both: agreement PDF is ready
           "verification_approved",// User: identity verified, can now list/borrow
           "verification_rejected",// User: ID docs rejected, re-submit needed
           "item_removed",         // Owner: admin removed your listing
+          "item_restored",        // Owner: admin restored your listing
           "user_suspended",       // User: account suspended by admin
+          "account_reactivated",  // User: account restored by admin
           "report_resolved",      // Reporter: your report has been resolved
           "partner_approved",     // User: partner application approved, can list items
           "partner_rejected",     // User: partner application rejected, with reason
+          "appeal_approved",      // User: suspension appeal approved, account restored
+          "appeal_rejected",      // User: suspension appeal rejected
+          // Admin-facing notification types
+          "new_report",           // Admin: a user submitted a new report
+          "new_verification",     // Admin: a user submitted verification documents
+          "new_partner_application", // Admin: a user applied to become a partner
+          "new_appeal",           // Admin: a suspended user submitted an appeal
         ],
         message: "Invalid notification type",
       },

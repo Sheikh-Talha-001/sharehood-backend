@@ -31,7 +31,8 @@ const User = require("../models/userModel");
 const asyncHandler = require("../utils/asyncHandler");
 const ErrorResponse = require("../utils/errorResponse");
 const cloudinary = require("../config/cloudinary");
-const { notify } = require("../utils/notify");
+const { notify, notifyAdmins } = require("../utils/notify");
+const { validateString } = require("../utils/validator");
 
 // ============================================================
 // Helper: Upload a single image buffer to Cloudinary
@@ -114,8 +115,10 @@ const submitVerification = asyncHandler(async (req, res, next) => {
   // Accepts both nationalIdNumber and nationalidNumber to tolerate casing typos
   const nationalIdNumber = req.body.nationalIdNumber || req.body.nationalidNumber;
 
-  if (!nationalIdNumber) {
-    return next(new ErrorResponse("Please provide your national ID number", 400));
+  try {
+    validateString(nationalIdNumber, "National ID Number", { required: true, maxLength: 50 });
+  } catch (err) {
+    return next(err);
   }
 
   // Check required file uploads
@@ -178,6 +181,14 @@ const submitVerification = asyncHandler(async (req, res, next) => {
   // This is what the verificationMiddleware reads.
   // The user's token still works — they just can't list/borrow yet.
   await User.findByIdAndUpdate(userId, { verificationStatus: "pending" });
+
+  // 🔔 NOTIFICATION: Notify all admins that new documents need review
+  await notifyAdmins({
+    sender: userId,
+    type: "new_verification",
+    title: "New Verification Submission",
+    message: `${req.user.name} submitted identity verification documents for review.`,
+  });
 
   // --- Return SAFE response (no document URLs, no national ID) ---
   // We never return the actual document URLs or national ID number

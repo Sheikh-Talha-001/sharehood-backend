@@ -195,7 +195,7 @@ const suspendUser = asyncHandler(async (req, res, next) => {
   }
 
   user.isSuspended = true;
-  user.suspensionReason = req.body.suspensionReason || "No reason provided";
+  user.suspensionReason = req.body?.suspensionReason || "No reason provided";
   user.suspendedAt = new Date();
   await user.save();
 
@@ -251,9 +251,14 @@ const activateUser = asyncHandler(async (req, res, next) => {
   user.suspendedAt = null;
   await user.save();
 
-  // 🔔 NOTIFICATION TRIGGER (future integration)
-  // TODO: Notify user their account has been reactivated
-  // Example: notificationService.notify(user._id, "account_reactivated");
+  // 🔔 NOTIFICATION: Tell the user their account has been restored
+  await notify({
+    recipient: user._id,
+    sender: null,
+    type: "account_reactivated",
+    title: "Account Restored ✅",
+    message: "Your account has been reactivated. You can now access all platform features again.",
+  });
 
   res.status(200).json({
     success: true,
@@ -333,7 +338,7 @@ const resolveReport = asyncHandler(async (req, res, next) => {
   }
 
   report.status = "resolved";
-  report.adminNotes = req.body.adminNotes || "";
+  report.adminNotes = req.body?.adminNotes || "";
   report.reviewedBy = req.user._id;
   report.reviewedAt = new Date();
   await report.save();
@@ -389,7 +394,7 @@ const dismissReport = asyncHandler(async (req, res, next) => {
   }
 
   report.status = "dismissed";
-  report.adminNotes = req.body.adminNotes || "";
+  report.adminNotes = req.body?.adminNotes || "";
   report.reviewedBy = req.user._id;
   report.reviewedAt = new Date();
   await report.save();
@@ -461,7 +466,7 @@ const removeItemByAdmin = asyncHandler(async (req, res, next) => {
   }
 
   item.isRemovedByAdmin = true;
-  item.adminRemovalReason = req.body.adminRemovalReason || "No reason provided";
+  item.adminRemovalReason = req.body?.adminRemovalReason || "No reason provided";
   item.removedByAdminAt = new Date();
   await item.save();
 
@@ -514,6 +519,16 @@ const restoreRemovedItem = asyncHandler(async (req, res, next) => {
   item.adminRemovalReason = "";
   item.removedByAdminAt = null;
   await item.save();
+
+  // 🔔 NOTIFICATION: Tell the item owner their listing was restored
+  await notify({
+    recipient: item.owner,
+    sender: null,
+    type: "item_restored",
+    title: "Your Item Was Restored",
+    message: `Your listing "${item.title}" has been restored to the marketplace by an admin.`,
+    relatedItem: item._id,
+  });
 
   res.status(200).json({
     success: true,

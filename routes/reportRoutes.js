@@ -19,9 +19,10 @@ const {
 } = require("../controllers/reportController");
 
 const { protect } = require("../middleware/authMiddleware");
+const { reportRateLimiter } = require("../middleware/rateLimitMiddleware");
 
 // POST /api/reports — Submit a report
-router.post("/", protect, createReport);
+router.post("/", protect, reportRateLimiter, createReport);
 
 // GET /api/reports/my-reports — View own reports
 router.get("/my-reports", protect, getMyReports);

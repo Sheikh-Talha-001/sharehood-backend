@@ -38,7 +38,8 @@ const SuspensionAppeal = require("../models/suspensionAppealModel");
 const User = require("../models/userModel");
 const asyncHandler = require("../utils/asyncHandler");
 const ErrorResponse = require("../utils/errorResponse");
-const { notify } = require("../utils/notify");
+const { notify, notifyAdmins } = require("../utils/notify");
+const { validateObjectId, validateString } = require("../utils/validator");
 
 // ============================================================
 // @route   POST /api/auth/appeal-suspension
@@ -68,10 +69,11 @@ const submitSuspensionAppeal = asyncHandler(async (req, res, next) => {
   const { email, appealMessage } = req.body;
 
   // --- Basic field validation ---
-  if (!email || !appealMessage) {
-    return next(
-      new ErrorResponse("Please provide your email and appeal message", 400)
-    );
+  try {
+    validateString(email, "Email", { required: true, maxLength: 100 });
+    validateString(appealMessage, "Appeal Message", { required: true, maxLength: 2000 });
+  } catch (err) {
+    return next(err);
   }
 
   // --- Email format validation ---
@@ -87,12 +89,6 @@ const submitSuspensionAppeal = asyncHandler(async (req, res, next) => {
         "Appeal message must be at least 20 characters — please explain your situation",
         400
       )
-    );
-  }
-
-  if (appealMessage.trim().length > 2000) {
-    return next(
-      new ErrorResponse("Appeal message cannot exceed 2000 characters", 400)
     );
   }
 
@@ -144,6 +140,14 @@ const submitSuspensionAppeal = asyncHandler(async (req, res, next) => {
     email: user.email,
     appealMessage: appealMessage.trim(),
     status: "pending",
+  });
+
+  // 🔔 NOTIFICATION: Notify all admins about the new suspension appeal
+  await notifyAdmins({
+    sender: user._id,
+    type: "new_appeal",
+    title: "New Suspension Appeal",
+    message: `${user.name} (${user.email}) has submitted a suspension appeal.`,
   });
 
   res.status(201).json({
@@ -209,6 +213,12 @@ const getAllSuspensionAppeals = asyncHandler(async (req, res, next) => {
 // @access  Admin only
 // ============================================================
 const getSuspensionAppealById = asyncHandler(async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, "Appeal ID");
+  } catch (err) {
+    return next(err);
+  }
+
   const appeal = await SuspensionAppeal.findById(req.params.id)
     .populate("user", "name email isSuspended suspensionReason suspendedAt role createdAt")
     .populate("reviewedBy", "name email");
@@ -242,6 +252,13 @@ const getSuspensionAppealById = asyncHandler(async (req, res, next) => {
 // GUARD: Cannot approve an already-reviewed appeal
 // ============================================================
 const approveAppeal = asyncHandler(async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, "Appeal ID");
+    if (req.body?.adminResponse) validateString(req.body.adminResponse, "Admin Response", { required: false, maxLength: 2000 });
+  } catch (err) {
+    return next(err);
+  }
+
   const appeal = await SuspensionAppeal.findById(req.params.id);
 
   if (!appeal) {
@@ -260,7 +277,7 @@ const approveAppeal = asyncHandler(async (req, res, next) => {
 
   // --- Update the appeal document ---
   appeal.status = "approved";
-  appeal.adminResponse = req.body.adminResponse || "Your appeal has been reviewed and approved.";
+  appeal.adminResponse = req.body?.adminResponse || "Your appeal has been reviewed and approved.";
   appeal.reviewedBy = req.user._id;
   appeal.reviewedAt = new Date();
   await appeal.save();
@@ -277,7 +294,7 @@ const approveAppeal = asyncHandler(async (req, res, next) => {
   await notify({
     recipient: appeal.user,
     sender: null,
-    type: "user_suspended", // Re-using closest type; frontend can key on message
+    type: "appeal_approved",
     title: "Account Restored ✅",
     message: `Your suspension appeal has been approved. Your account is fully restored. ${appeal.adminResponse}`,
   });
@@ -315,6 +332,13 @@ const approveAppeal = asyncHandler(async (req, res, next) => {
 //   appeals would be too harsh for minor violations.
 // ============================================================
 const rejectAppeal = asyncHandler(async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, "Appeal ID");
+    if (req.body?.adminResponse) validateString(req.body.adminResponse, "Admin Response", { required: false, maxLength: 2000 });
+  } catch (err) {
+    return next(err);
+  }
+
   const appeal = await SuspensionAppeal.findById(req.params.id);
 
   if (!appeal) {
@@ -331,7 +355,7 @@ const rejectAppeal = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const adminResponse = req.body.adminResponse || "";
+  const adminResponse = req.body?.adminResponse || "";
 
   // --- Update the appeal document ---
   appeal.status = "rejected";
@@ -344,7 +368,7 @@ const rejectAppeal = asyncHandler(async (req, res, next) => {
   await notify({
     recipient: appeal.user,
     sender: null,
-    type: "user_suspended",
+    type: "appeal_rejected",
     title: "Appeal Rejected",
     message: adminResponse
       ? `Your suspension appeal was rejected. Reason: ${adminResponse}`

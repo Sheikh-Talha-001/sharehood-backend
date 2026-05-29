@@ -42,6 +42,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const ErrorResponse = require("../utils/errorResponse");
 const generateAgreementPDF = require("../utils/generateAgreementPDF");
 const { notify } = require("../utils/notify");
+const { validateObjectId } = require("../utils/validator");
 
 // ============================================================
 // HELPER: Generate a unique agreement number
@@ -108,6 +109,12 @@ const POPULATE_OPTIONS = [
 const createBorrowRequest = asyncHandler(async (req, res, next) => {
   const { item: itemId, message, startDate, expectedReturnDate } = req.body;
   const borrowerId = req.user._id;
+
+  try {
+    validateObjectId(itemId, "Item ID");
+  } catch (err) {
+    return next(err);
+  }
 
   // --- RULE 1: Item must exist ---
   const item = await Item.findById(itemId);
@@ -268,6 +275,12 @@ const getRequestsForMyItems = asyncHandler(async (req, res, next) => {
 //   makes no sense and could cause data inconsistencies.
 // ============================================================
 const approveRequest = asyncHandler(async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, "Request ID");
+  } catch (err) {
+    return next(err);
+  }
+
   const request = await BorrowRequest.findById(req.params.id);
 
   if (!request) {
@@ -433,6 +446,12 @@ const approveRequest = asyncHandler(async (req, res, next) => {
 //   This is a normal part of the sharing workflow.
 // ============================================================
 const rejectRequest = asyncHandler(async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, "Request ID");
+  } catch (err) {
+    return next(err);
+  }
+
   const request = await BorrowRequest.findById(req.params.id);
 
   if (!request) {
@@ -500,6 +519,12 @@ const rejectRequest = asyncHandler(async (req, res, next) => {
 //   instead. The owner should use "mark returned" for that.
 // ============================================================
 const cancelRequest = asyncHandler(async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, "Request ID");
+  } catch (err) {
+    return next(err);
+  }
+
   const request = await BorrowRequest.findById(req.params.id);
 
   if (!request) {
@@ -528,6 +553,18 @@ const cancelRequest = asyncHandler(async (req, res, next) => {
 
   const populatedRequest = await BorrowRequest.findById(request._id)
     .populate(POPULATE_OPTIONS);
+
+  // 🔔 NOTIFICATION: Notify the OWNER that the borrower cancelled
+  const cancelledItem = await Item.findById(request.item).select("title");
+  await notify({
+    recipient: request.owner,
+    sender: request.borrower,
+    type: "request_cancelled",
+    title: "Borrow Request Cancelled",
+    message: `A borrow request for "${cancelledItem ? cancelledItem.title : "your item"}" has been cancelled by the borrower.`,
+    relatedItem: request.item,
+    relatedRequest: request._id,
+  });
 
   res.status(200).json({
     success: true,
@@ -559,6 +596,12 @@ const cancelRequest = asyncHandler(async (req, res, next) => {
 //   so there's nothing to "return."
 // ============================================================
 const markReturned = asyncHandler(async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, "Request ID");
+  } catch (err) {
+    return next(err);
+  }
+
   const request = await BorrowRequest.findById(req.params.id);
 
   if (!request) {

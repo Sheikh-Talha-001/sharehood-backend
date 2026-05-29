@@ -38,10 +38,10 @@
 const Item = require("../models/itemModel");
 const { ITEM_CATEGORIES } = require("../models/itemModel");
 const User = require("../models/userModel");
-const asyncHandler = require("../utils/asyncHandler");
 const ErrorResponse = require("../utils/errorResponse");
 const QueryHelper = require("../utils/queryHelper");
 const cloudinary = require("../config/cloudinary");
+const { validateObjectId, validateString } = require("../utils/validator");
 
 // ============================================================
 // ALLOWED SORT VALUES — Whitelist for security
@@ -91,6 +91,13 @@ const uploadToCloudinary = (fileBuffer, mimetype) => {
 const createItem = asyncHandler(async (req, res, next) => {
   // Set the owner to the currently logged-in user
   req.body.owner = req.user._id;
+
+  try {
+    validateString(req.body.title, "Title", { required: true, maxLength: 100 });
+    validateString(req.body.description, "Description", { required: true, maxLength: 2000 });
+  } catch (err) {
+    return next(err);
+  }
 
   // If user uploaded an image file, upload it to Cloudinary
   if (req.file) {
@@ -366,6 +373,12 @@ const getCategories = asyncHandler(async (req, res, next) => {
 // @access  Public
 // ============================================================
 const getSingleItem = asyncHandler(async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, "Item ID");
+  } catch (err) {
+    return next(err);
+  }
+
   const item = await Item.findById(req.params.id)
     .populate("owner", "name verificationStatus")
     .select("-imagePublicId -adminRemovalReason -removedByAdminAt -__v");
@@ -391,6 +404,14 @@ const getSingleItem = asyncHandler(async (req, res, next) => {
 // @access  Private (only the owner can update)
 // ============================================================
 const updateItem = asyncHandler(async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, "Item ID");
+    if (req.body.title) validateString(req.body.title, "Title", { required: false, maxLength: 100 });
+    if (req.body.description) validateString(req.body.description, "Description", { required: false, maxLength: 2000 });
+  } catch (err) {
+    return next(err);
+  }
+
   let item = await Item.findById(req.params.id);
 
   if (!item) {
@@ -434,6 +455,12 @@ const updateItem = asyncHandler(async (req, res, next) => {
 // @access  Private (only the owner can delete)
 // ============================================================
 const deleteItem = asyncHandler(async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, "Item ID");
+  } catch (err) {
+    return next(err);
+  }
+
   const item = await Item.findById(req.params.id);
 
   if (!item) {

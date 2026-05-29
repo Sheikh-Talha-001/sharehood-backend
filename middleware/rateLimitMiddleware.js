@@ -88,4 +88,46 @@ const loginRateLimiter = rateLimit({
   },
 });
 
-module.exports = { appealRateLimiter, loginRateLimiter };
+// ============================================================
+// Report Rate Limiter
+// ============================================================
+// Rule: Max 5 reports per IP per hour.
+const reportRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: {
+    success: false,
+    message: "Too many reports from this IP. Please wait 1 hour before submitting another.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      message: "Too many reports from this IP. Please wait 1 hour before submitting another.",
+    });
+  },
+});
+
+// ============================================================
+// Partner Application Rate Limiter
+// ============================================================
+// Rule: Max 3 applications per IP per 24 hours.
+const partnerRateLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 3,
+  message: {
+    success: false,
+    message: "Too many partner applications from this IP. Please wait 24 hours.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      message: "Too many partner applications from this IP. Please wait 24 hours.",
+    });
+  },
+});
+
+module.exports = { appealRateLimiter, loginRateLimiter, reportRateLimiter, partnerRateLimiter };

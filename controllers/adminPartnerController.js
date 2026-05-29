@@ -261,7 +261,7 @@ const rejectPartnerApplication = asyncHandler(async (req, res, next) => {
   }
 
   // --- REQUIRE rejection reason ---
-  const { rejectionReason } = req.body;
+  const { rejectionReason } = req.body || {};
   if (!rejectionReason || rejectionReason.trim() === "") {
     return next(
       new ErrorResponse(

@@ -46,6 +46,7 @@ const {
 // Import middleware
 const { protect } = require("../middleware/authMiddleware");
 const { requireVerified } = require("../middleware/verificationMiddleware");
+const { partnerRateLimiter } = require("../middleware/rateLimitMiddleware");
 
 // ============================================================
 // All routes below require authentication (valid JWT)
@@ -55,7 +56,7 @@ const { requireVerified } = require("../middleware/verificationMiddleware");
 // POST /api/partners/apply
 // Chain: protect (JWT) → requireVerified (identity check) → applyAsPartner
 // Body: { fullName, phoneNumber, categoriesInterestedIn, reasonForJoining, businessName?, experienceDescription }
-router.post("/apply", protect, requireVerified, applyAsPartner);
+router.post("/apply", protect, requireVerified, partnerRateLimiter, applyAsPartner);
 
 // --- Check my application status ---
 // GET /api/partners/my-application

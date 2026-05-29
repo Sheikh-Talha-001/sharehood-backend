@@ -11,6 +11,7 @@ const User = require("../models/userModel");
 const { sendTokenResponse } = require("../utils/generateToken");
 const asyncHandler = require("../utils/asyncHandler");
 const ErrorResponse = require("../utils/errorResponse");
+const { validateString } = require("../utils/validator");
 
 // ============================================================
 // @route   POST /api/auth/register
@@ -20,9 +21,13 @@ const ErrorResponse = require("../utils/errorResponse");
 const registerUser = asyncHandler(async (req, res, next) => {
   const { name, email, password } = req.body;
 
-  // Validate required fields
-  if (!name || !email || !password) {
-    return next(new ErrorResponse("Please provide name, email and password", 400));
+  // Validate required fields and lengths
+  try {
+    validateString(name, "Name", { required: true, maxLength: 50 });
+    validateString(email, "Email", { required: true, maxLength: 100 });
+    validateString(password, "Password", { required: true, maxLength: 128 });
+  } catch (err) {
+    return next(err);
   }
 
   // Check if email is already taken
@@ -46,8 +51,11 @@ const registerUser = asyncHandler(async (req, res, next) => {
 const loginUser = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return next(new ErrorResponse("Please provide email and password", 400));
+  try {
+    validateString(email, "Email", { required: true, maxLength: 100 });
+    validateString(password, "Password", { required: true, maxLength: 128 });
+  } catch (err) {
+    return next(err);
   }
 
   // Include password field (hidden by default via select: false)
@@ -74,12 +82,30 @@ const loginUser = asyncHandler(async (req, res, next) => {
 // @access  Private
 // ============================================================
 const getMe = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
+  let token = req.cookies?.token;
+  if (!token && req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1];
+  }
 
-  res.status(200).json({
-    success: true,
-    user,
-  });
+  if (!token) {
+    return next(new ErrorResponse("Not authorized - Please log in", 401));
+  }
+
+  try {
+    const decoded = require("jsonwebtoken").verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (err) {
+    return next(new ErrorResponse("Not authorized", 401));
+  }
 });
 
 // ============================================================

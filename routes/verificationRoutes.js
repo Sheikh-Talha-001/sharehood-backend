@@ -25,12 +25,14 @@ const {
 
 const { protect } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
+const { partnerRateLimiter } = require("../middleware/rateLimitMiddleware");
 
 // POST /api/verification/submit
 // multipart/form-data: nationalIdNumber (text) + image files
 router.post(
   "/submit",
   protect,
+  partnerRateLimiter,
   upload.fields([
     { name: "idFrontImage", maxCount: 1 },
     { name: "idBackImage", maxCount: 1 },

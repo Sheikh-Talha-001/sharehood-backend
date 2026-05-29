@@ -22,6 +22,8 @@ const User = require("../models/userModel");
 const Item = require("../models/itemModel");
 const asyncHandler = require("../utils/asyncHandler");
 const ErrorResponse = require("../utils/errorResponse");
+const { notifyAdmins } = require("../utils/notify");
+const { validateString, validateObjectId } = require("../utils/validator");
 
 // ============================================================
 // @route   POST /api/reports
@@ -45,6 +47,15 @@ const ErrorResponse = require("../utils/errorResponse");
 // ============================================================
 const createReport = asyncHandler(async (req, res, next) => {
   const { reportedUser, reportedItem, reason, description } = req.body;
+
+  try {
+    if (reportedUser) validateObjectId(reportedUser, "Reported User ID");
+    if (reportedItem) validateObjectId(reportedItem, "Reported Item ID");
+    validateString(reason, "Reason", { required: true, maxLength: 100 });
+    validateString(description, "Description", { required: true, maxLength: 2000 });
+  } catch (err) {
+    return next(err);
+  }
 
   // --- RULE 1: At least one target ---
   if (!reportedUser && !reportedItem) {
@@ -85,9 +96,14 @@ const createReport = asyncHandler(async (req, res, next) => {
     description,
   });
 
-  // 🔔 NOTIFICATION TRIGGER (future integration)
-  // TODO: Notify admins about new report via email/push notification
-  // Example: notificationService.notifyAdmins("new_report", report);
+  // 🔔 NOTIFICATION: Notify all admins about the new report
+  await notifyAdmins({
+    sender: req.user._id,
+    type: "new_report",
+    title: "New Report Submitted",
+    message: `${req.user.name} submitted a report: "${reason}"`,
+    relatedReport: report._id,
+  });
 
   res.status(201).json({
     success: true,

@@ -8,6 +8,10 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
 ];
 
+// Validate that a string looks like a valid MongoDB ObjectId
+// (24 hex characters). This prevents arbitrary room names.
+const isValidObjectId = (id) => /^[a-fA-F0-9]{24}$/.test(id);
+
 module.exports = {
   init: (httpServer) => {
     io = new Server(httpServer, {
@@ -16,27 +20,24 @@ module.exports = {
         methods: ["GET", "POST"],
         credentials: true,
       },
-      // Allow both polling and websocket transports.
-      // Polling is critical for Railway (and most reverse proxies)
-      // because WebSocket upgrades are sometimes blocked.
       transports: ["polling", "websocket"],
-      // More lenient ping settings for proxy environments
-      pingTimeout: 60000,    // How long to wait for a pong before disconnecting
-      pingInterval: 25000,   // How often to ping (default 25s)
-      // Allow clients that don't upgrade to websocket to keep using polling
+      pingTimeout: 60000,
+      pingInterval: 25000,
       allowUpgrades: true,
-      // Increase max buffer size for payload
       maxHttpBufferSize: 1e6,
     });
 
     io.on("connection", (socket) => {
       console.log(`[Socket.io] Client connected: ${socket.id} via ${socket.conn.transport.name}`);
 
-      // When a user authenticates on the frontend, they join a room with their userId
+      // When a user authenticates on the frontend, they join a room with their userId.
+      // SECURITY: We validate the userId format before allowing the join.
       socket.on("join", (userId) => {
-        if (userId) {
+        if (userId && isValidObjectId(userId)) {
           socket.join(userId);
           console.log(`[Socket.io] User ${userId} joined room`);
+        } else {
+          console.warn(`[Socket.io] Rejected invalid room join attempt: ${userId}`);
         }
       });
 

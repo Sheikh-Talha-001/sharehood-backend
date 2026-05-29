@@ -240,21 +240,30 @@ const getPublicProfile = asyncHandler(async (req, res, next) => {
     isRemovedByAdmin: false,
   });
 
+  // Fetch actual active listings for the profile
+  const listedItems = await Item.find({
+    owner: user._id,
+    isRemovedByAdmin: false,
+  });
+
   // 3. Construct clean public response
   res.status(200).json({
     success: true,
     data: {
-      _id: user._id,
-      name: user.name,
-      avatar: user.avatar,
-      bio: user.bio,
-      neighborhood: user.neighborhood,
-      verificationStatus: user.verificationStatus,
-      partnerStatus: user.partnerStatus,
-      memberSince: user.createdAt,
+      user: {
+        _id: user._id,
+        name: user.name,
+        avatar: user.avatar,
+        bio: user.bio,
+        neighborhood: user.neighborhood,
+        verificationStatus: user.verificationStatus,
+        partnerStatus: user.partnerStatus,
+        createdAt: user.createdAt,
+      },
       stats: {
         activeListings: listingCount,
       },
+      listedItems: listedItems,
     },
   });
 });

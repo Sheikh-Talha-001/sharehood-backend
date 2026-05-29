@@ -37,7 +37,7 @@ router.post("/login", loginRateLimiter, loginUser);
 router.post("/appeal-suspension", appealRateLimiter, submitSuspensionAppeal);
 
 // --- Private Routes ---
-router.get("/me", protect, getMe);
-router.post("/logout", protect, logoutUser);
+router.get("/me", getMe);
+router.post("/logout", logoutUser);
 
 module.exports = router;

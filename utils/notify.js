@@ -83,31 +83,26 @@ const notify = async ({
     });
 
     // ═══════════════════════════════════════════════════════
-    // 🔌 FUTURE INTEGRATION HOOKS — Plug in here
+    // 🔌 REAL-TIME (Socket.io) — Push to connected clients
     // ═══════════════════════════════════════════════════════
-    //
-    // REAL-TIME (Socket.io):
     try {
       const { getIO } = require("../socket");
       const io = getIO();
       if (io) {
+        // Emit the full notification object for the dropdown
         io.to(recipient.toString()).emit("new_notification", notification);
+        
+        // Emit an updated unread count so the badge refreshes instantly
+        // without requiring a separate API call
+        const unreadCount = await Notification.countDocuments({
+          recipient,
+          isRead: false,
+        });
+        io.to(recipient.toString()).emit("unread_count_update", { unreadCount });
       }
     } catch (socketErr) {
       console.error("[notify] Socket emit failed:", socketErr.message);
     }
-    //
-    // EMAIL (Nodemailer / SendGrid):
-    //   const emailService = require("./emailService");
-    //   await emailService.sendNotificationEmail(recipient, title, message);
-    //
-    // PUSH (Firebase FCM):
-    //   const pushService = require("./pushService");
-    //   await pushService.send(recipient, title, message);
-    //
-    // All three can be enabled independently without changing
-    // any controller code — just uncomment the lines above.
-    // ═══════════════════════════════════════════════════════
 
     return notification;
   } catch (error) {
@@ -118,4 +113,49 @@ const notify = async ({
   }
 };
 
-module.exports = { notify };
+// ============================================================
+// notifyAdmins() — Send a notification to ALL admin users
+// ============================================================
+// Used when a user submits something that requires admin review:
+//   - Verification documents
+//   - Partner applications
+//   - Reports
+//   - Suspension appeals
+//
+// This finds all admin users and creates one notification per admin.
+// Errors are logged but never thrown (same philosophy as notify).
+// ============================================================
+const notifyAdmins = async ({ sender = null, type, title, message, relatedItem = null, relatedRequest = null, relatedAgreement = null, relatedReport = null }) => {
+  try {
+    const User = require("../models/userModel");
+    const admins = await User.find({ role: "admin" }).select("_id");
+
+    if (admins.length === 0) {
+      console.warn("[notifyAdmins] No admin users found in the database");
+      return [];
+    }
+
+    const results = await Promise.all(
+      admins.map((admin) =>
+        notify({
+          recipient: admin._id,
+          sender,
+          type,
+          title,
+          message,
+          relatedItem,
+          relatedRequest,
+          relatedAgreement,
+          relatedReport,
+        })
+      )
+    );
+
+    return results.filter(Boolean);
+  } catch (error) {
+    console.error(`[notifyAdmins] Failed to notify admins (type: ${type}):`, error.message);
+    return [];
+  }
+};
+
+module.exports = { notify, notifyAdmins };

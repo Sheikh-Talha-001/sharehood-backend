@@ -39,6 +39,8 @@ const PartnerApplication = require("../models/partnerApplicationModel");
 const User = require("../models/userModel");
 const asyncHandler = require("../utils/asyncHandler");
 const ErrorResponse = require("../utils/errorResponse");
+const { notifyAdmins } = require("../utils/notify");
+const { validateString } = require("../utils/validator");
 
 // ============================================================
 // @route   POST /api/partners/apply
@@ -131,8 +133,6 @@ const applyAsPartner = asyncHandler(async (req, res, next) => {
   const resolvedExperienceDescription = experienceDescription ? experienceDescription.trim() : "";
 
   // Validate required fields explicitly for clear error messages
-  // (Mongoose validation would also catch these, but the messages
-  // would be less user-friendly for missing fields)
   if (!resolvedFullName || !resolvedPhoneNumber || !resolvedReasonForJoining || !resolvedExperienceDescription || !resolvedCity) {
     return next(
       new ErrorResponse(
@@ -140,6 +140,17 @@ const applyAsPartner = asyncHandler(async (req, res, next) => {
         400
       )
     );
+  }
+
+  try {
+    validateString(resolvedFullName, "Full Name", { required: true, maxLength: 100 });
+    validateString(resolvedPhoneNumber, "Phone Number", { required: true, maxLength: 20 });
+    validateString(resolvedReasonForJoining, "Reason for Joining", { required: true, maxLength: 1000 });
+    validateString(resolvedCity, "City", { required: true, maxLength: 100 });
+    validateString(resolvedExperienceDescription, "Experience Description", { required: true, maxLength: 2000 });
+    if (businessName) validateString(businessName, "Business Name", { required: false, maxLength: 100 });
+  } catch (err) {
+    return next(err);
   }
 
   // Validate categoriesInterestedIn is a non-empty array
@@ -173,6 +184,14 @@ const applyAsPartner = asyncHandler(async (req, res, next) => {
   // This immediately reflects in the frontend UI so the user
   // sees "Your application is under review" instead of "Apply now"
   await User.findByIdAndUpdate(userId, { partnerStatus: "pending" });
+
+  // 🔔 NOTIFICATION: Notify all admins that a new partner application needs review
+  await notifyAdmins({
+    sender: userId,
+    type: "new_partner_application",
+    title: "New Partner Application",
+    message: `${req.user.name} has applied to become a partner/lender.`,
+  });
 
   res.status(201).json({
     success: true,
