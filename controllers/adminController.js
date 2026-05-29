@@ -178,7 +178,7 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 //   Suspension preserves all data while blocking the bad actor.
 // ============================================================
 const suspendUser = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.params.id);
+  const user = await User.findById(req.params.id).select('+password');
 
   if (!user) {
     return next(new ErrorResponse("User not found", 404));
@@ -236,7 +236,7 @@ const suspendUser = asyncHandler(async (req, res, next) => {
 //   the suspension — the user can use the platform again.
 // ============================================================
 const activateUser = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.params.id);
+  const user = await User.findById(req.params.id).select('+password');
 
   if (!user) {
     return next(new ErrorResponse("User not found", 404));

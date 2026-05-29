@@ -12,6 +12,9 @@ const errorHandler = (err, req, res, next) => {
 
   // Log to console for dev
   console.error(err);
+  try {
+    require('fs').appendFileSync('error.log', new Date().toISOString() + ' ' + (err.stack || err) + '\n');
+  } catch(e) {}
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {

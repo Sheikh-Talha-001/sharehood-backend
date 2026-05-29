@@ -572,6 +572,17 @@ const markReturned = asyncHandler(async (req, res, next) => {
     );
   }
 
+  // --- IDEMPOTENCY CHECK ---
+  // If the item is already returned (e.g., user double-clicked the button),
+  // just return a success response without throwing an error.
+  if (request.status === "returned") {
+    return res.status(200).json({
+      success: true,
+      message: "Item is already marked as returned",
+      data: request,
+    });
+  }
+
   // --- STATUS CHECK: Can only return items that are currently approved ---
   if (request.status !== "approved") {
     return next(

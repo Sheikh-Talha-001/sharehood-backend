@@ -1,0 +1,11 @@
+2026-05-29T06:37:34.093Z Error: Not authorized - Please log in
+    at C:\Users\Asif Computer\ShareHood\backend\middleware\authMiddleware.js:28:17
+    at C:\Users\Asif Computer\ShareHood\backend\utils\asyncHandler.js:4:21
+    at Layer.handleRequest (C:\Users\Asif Computer\ShareHood\backend\node_modules\router\lib\layer.js:152:17)
+    at next (C:\Users\Asif Computer\ShareHood\backend\node_modules\router\lib\route.js:157:13)
+    at Route.dispatch (C:\Users\Asif Computer\ShareHood\backend\node_modules\router\lib\route.js:117:3)
+    at handle (C:\Users\Asif Computer\ShareHood\backend\node_modules\router\index.js:435:11)
+    at Layer.handleRequest (C:\Users\Asif Computer\ShareHood\backend\node_modules\router\lib\layer.js:152:17)
+    at C:\Users\Asif Computer\ShareHood\backend\node_modules\router\index.js:295:15
+    at param (C:\Users\Asif Computer\ShareHood\backend\node_modules\router\index.js:600:14)
+    at param (C:\Users\Asif Computer\ShareHood\backend\node_modules\router\index.js:610:14)
