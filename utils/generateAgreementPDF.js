@@ -91,12 +91,12 @@ const generateAgreementPDF = (agreementData) => {
       // PDF CONTENT — Building the agreement document
       // ============================================================
 
-      // --- HEADER: ShareHood branding ---
+      // --- HEADER: Lendly branding ---
       doc
         .fontSize(28)
         .font("Helvetica-Bold")
         .fillColor("#2563EB") // Blue brand color
-        .text("ShareHood", { align: "center" });
+        .text("Lendly", { align: "center" });
 
       doc
         .fontSize(14)
@@ -320,7 +320,7 @@ const generateAgreementPDF = (agreementData) => {
         "2. The borrower is responsible for any damage that occurs during the borrowing period.",
         "3. The item must be returned by the expected return date unless an extension is agreed upon.",
         "4. The owner reserves the right to request early return of the item.",
-        "5. Both parties agree to communicate any issues promptly through the ShareHood platform.",
+        "5. Both parties agree to communicate any issues promptly through the Lendly platform.",
         "6. This agreement is generated automatically and serves as a record of the transaction.",
       ];
 
@@ -346,7 +346,7 @@ const generateAgreementPDF = (agreementData) => {
         .font("Helvetica")
         .fillColor("#94A3B8")
         .text(
-          "This is an automatically generated digital agreement by ShareHood. " +
+          "This is an automatically generated digital agreement by Lendly. " +
           "It serves as a record of the borrowing transaction between the parties listed above.",
           { align: "center" }
         );

@@ -3,7 +3,7 @@
 // ============================================================
 //
 // WHAT IS ACTIVITY TRACKING?
-//   Every important action on ShareHood generates a notification:
+//   Every important action on Lendly generates a notification:
 //   "Someone wants your item", "Your request was approved", etc.
 //   This controller lets users:
 //     - Fetch their own notification feed

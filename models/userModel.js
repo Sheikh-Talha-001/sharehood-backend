@@ -46,7 +46,7 @@
 //   It NEVER exposes: email, phone, suspension data, or internal IDs.
 //
 // WHY CAPABILITY-BASED PERMISSIONS (canListItems) INSTEAD OF ROLES?
-//   ShareHood uses a TRUST-FIRST marketplace model:
+//   Lendly uses a TRUST-FIRST marketplace model:
 //     - ANYONE can browse and borrow items (after verification)
 //     - ONLY approved partners/lenders can CREATE listings
 //
@@ -167,7 +167,7 @@ const userSchema = new mongoose.Schema(
     //   Profile picture stored on Cloudinary. The pattern is
     //   identical to item images: we store the URL + Cloudinary
     //   public_id (for deletion when the avatar is replaced).
-    //   Stored in the "sharehood/avatars/" folder on Cloudinary
+    //   Stored in the "lendly/avatars/" folder on Cloudinary
     //   to separate them from item images.
     // =========================================================
     phoneNumber: {

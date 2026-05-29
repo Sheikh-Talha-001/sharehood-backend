@@ -39,6 +39,7 @@ const Item = require("../models/itemModel");
 const { ITEM_CATEGORIES } = require("../models/itemModel");
 const User = require("../models/userModel");
 const ErrorResponse = require("../utils/errorResponse");
+const asyncHandler = require("../utils/asyncHandler");
 const QueryHelper = require("../utils/queryHelper");
 const cloudinary = require("../config/cloudinary");
 const { validateObjectId, validateString } = require("../utils/validator");
@@ -72,7 +73,7 @@ const uploadToCloudinary = (fileBuffer, mimetype) => {
     cloudinary.uploader.upload(
       dataUri,
       {
-        folder: "sharehood",       // All images go into a "sharehood" folder
+        folder: "lendly",       // All images go into a "lendly" folder
         resource_type: "image",
       },
       (error, result) => {
@@ -320,7 +321,7 @@ const getAllItems = asyncHandler(async (req, res, next) => {
   // -------------------------------------------------------
   // STEP 6: RETURN STANDARDIZED RESPONSE
   // -------------------------------------------------------
-  // Every list endpoint in ShareHood returns the same shape:
+  // Every list endpoint in Lendly returns the same shape:
   // {
   //   success: true,
   //   count: 12,           ← items in THIS page

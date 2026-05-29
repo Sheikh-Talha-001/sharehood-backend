@@ -3,7 +3,7 @@
 // ============================================================
 //
 // WHAT IS A PARTNER APPLICATION?
-//   ShareHood is a TRUST-FIRST marketplace. Not everyone can list
+//   Lendly is a TRUST-FIRST marketplace. Not everyone can list
 //   items for lending. Users must apply to become a "partner" (lender),
 //   and an admin must approve them before they can create listings.
 //

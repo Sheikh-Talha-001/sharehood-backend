@@ -1,5 +1,5 @@
 // ============================================================
-// server.js — Main Entry Point for ShareHood Backend API
+// server.js — Main Entry Point for Lendly Backend API
 // ============================================================
 
 // --- 1. Load Environment Variables ---
@@ -27,6 +27,8 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const partnerRoutes = require("./routes/partnerRoutes");
 const userRoutes = require("./routes/userRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const complaintRoutes = require("./routes/complaintRoutes");
+const adminComplaintRoutes = require("./routes/adminComplaintRoutes");
 
 // --- 4. Connect to MongoDB ---
 connectDB();
@@ -147,7 +149,7 @@ app.get("/.well-known/appspecific/com.chrome.devtools.json", (req, res) => res.s
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "ShareHood API Running 🚀",
+    message: "Lendly API Running 🚀",
     environment: process.env.NODE_ENV || "development",
   });
 });
@@ -178,6 +180,12 @@ app.use("/api/notifications", notificationRoutes);
 
 // Partners: POST /api/partners/apply | GET /api/partners/my-application
 app.use("/api/partners", partnerRoutes);
+
+// Complaints
+app.use("/api/complaints", complaintRoutes);
+
+// Admin Endpoints
+app.use("/api/admin/complaints", adminComplaintRoutes);
 
 // Users: GET/PUT /api/users/profile | PUT /change-password, /avatar | GET /:id/public
 app.use("/api/users", userRoutes);

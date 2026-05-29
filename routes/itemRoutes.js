@@ -64,7 +64,7 @@ const { protect } = require("../middleware/authMiddleware");
 const { requireVerified } = require("../middleware/verificationMiddleware");
 
 // Import partner middleware (blocks non-partner users from listing)
-// WHY HERE? ShareHood is a trust-first marketplace. Only admin-approved
+// WHY HERE? Lendly is a trust-first marketplace. Only admin-approved
 // partners/lenders can create item listings. Regular verified users
 // can only browse and borrow — not list items.
 const { requirePartner } = require("../middleware/partnerMiddleware");

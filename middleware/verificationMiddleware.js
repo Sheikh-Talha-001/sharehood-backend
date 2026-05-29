@@ -10,7 +10,7 @@
 //   - POST /api/items        (creating a new item listing)
 //   - POST /api/requests     (creating a borrow request)
 //
-//   These are the two "trust-critical" actions in ShareHood.
+//   These are the two "trust-critical" actions in Lendly.
 //   You must be a verified community member to participate.
 //
 // MIDDLEWARE CHAIN ORDER (for protected, verified routes):

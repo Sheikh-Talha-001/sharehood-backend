@@ -3,7 +3,7 @@
 // ============================================================
 //
 // TRUST-FIRST MARKETPLACE — PARTNER ONBOARDING SYSTEM:
-//   ShareHood restricts item listing to vetted partners/lenders.
+//   Lendly restricts item listing to vetted partners/lenders.
 //   This controller handles the USER-FACING side of that process:
 //
 //   1. APPLY:     POST /api/partners/apply

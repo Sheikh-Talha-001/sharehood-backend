@@ -9,12 +9,12 @@
 // WHERE IS IT USED?
 //   - POST /api/items  (creating a new item listing)
 //
-//   This is the ONLY "trust-critical" listing action in ShareHood.
+//   This is the ONLY "trust-critical" listing action in Lendly.
 //   Browsing, borrowing, and other actions are NOT restricted
 //   by partner status (only by verification status).
 //
 // TRUST-FIRST MARKETPLACE ARCHITECTURE:
-//   ShareHood operates on a two-tier trust system:
+//   Lendly operates on a two-tier trust system:
 //
 //   TIER 1 — Identity Verification (verificationMiddleware.js):
 //     "Are you who you say you are?"

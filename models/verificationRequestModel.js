@@ -3,7 +3,7 @@
 // ============================================================
 //
 // WHAT IS A VERIFICATION REQUEST?
-//   Before a user can list items or borrow items on ShareHood,
+//   Before a user can list items or borrow items on Lendly,
 //   they must verify their identity. A VerificationRequest stores
 //   the submitted documents until an admin reviews and approves them.
 //

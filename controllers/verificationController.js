@@ -15,7 +15,7 @@
 //   1. Multer captures the file into memory (req.files)
 //   2. We convert buffer → base64 data URI
 //   3. We call cloudinary.uploader.upload() with the folder
-//      "sharehood/verifications/" (separate from item images)
+//      "lendly/verifications/" (separate from item images)
 //   4. Cloudinary returns { secure_url, public_id }
 //   5. We store both in MongoDB
 //
@@ -38,7 +38,7 @@ const { validateString } = require("../utils/validator");
 // Helper: Upload a single image buffer to Cloudinary
 // ============================================================
 // Same pattern as itemController.js uploadToCloudinary, but
-// uses the "sharehood/verifications" folder to keep ID docs
+// uses the "lendly/verifications" folder to keep ID docs
 // separate from item photos for easier management.
 //
 // WHY A SEPARATE FOLDER?
@@ -55,7 +55,7 @@ const uploadVerificationImage = (fileBuffer, mimetype) => {
     cloudinary.uploader.upload(
       dataUri,
       {
-        folder: "sharehood/verifications", // Separate folder from item images
+        folder: "lendly/verifications", // Separate folder from item images
         resource_type: "image",
       },
       (error, result) => {

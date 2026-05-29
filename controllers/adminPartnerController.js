@@ -201,7 +201,7 @@ const approvePartnerApplication = asyncHandler(async (req, res, next) => {
     type: "partner_approved",
     title: "Partner Application Approved 🎉",
     message:
-      "Congratulations! Your partner application has been approved. You can now list items for lending on ShareHood.",
+      "Congratulations! Your partner application has been approved. You can now list items for lending on Lendly.",
   });
 
   // Populate for the response

@@ -86,6 +86,14 @@ const getUserSummary = asyncHandler(async (req, res, next) => {
 // Highlights pending moderation tasks (verifications, partners, reports).
 // ============================================================
 const getAdminSummary = asyncHandler(async (req, res, next) => {
+  // Date calculations for timeseries
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 7);
+
+  const sixMonthsAgo = new Date(today);
+  sixMonthsAgo.setMonth(today.getMonth() - 6);
+
   // Run all platform counts in parallel
   const [
     totalUsers,
@@ -96,6 +104,9 @@ const getAdminSummary = asyncHandler(async (req, res, next) => {
     activeListings,
     pendingReports,
     activeAgreements,
+    userActivityRaw,
+    itemActivityRaw,
+    reportTrendsRaw
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ verificationStatus: "verified" }),
@@ -105,7 +116,80 @@ const getAdminSummary = asyncHandler(async (req, res, next) => {
     Item.countDocuments({ isRemovedByAdmin: false }),
     Report.countDocuments({ status: "pending" }),
     Agreement.countDocuments({ status: "active" }),
+    // Timeseries: Users created in last 7 days
+    User.aggregate([
+      { $match: { createdAt: { $gte: sevenDaysAgo } } },
+      { $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      }
+    ]),
+    // Timeseries: Items created in last 7 days
+    Item.aggregate([
+      { $match: { createdAt: { $gte: sevenDaysAgo } } },
+      { $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 }
+        }
+      }
+    ]),
+    // Timeseries: Reports in last 6 months
+    Report.aggregate([
+      { $match: { createdAt: { $gte: sixMonthsAgo } } },
+      { $group: {
+          _id: { 
+            month: { $month: "$createdAt" },
+            year: { $year: "$createdAt" },
+            status: "$status" 
+          },
+          count: { $sum: 1 }
+        }
+      }
+    ])
   ]);
+
+  // Format activityData (last 7 days)
+  const activityData = [];
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    
+    const userCount = userActivityRaw.find(u => u._id === dateStr)?.count || 0;
+    const itemCount = itemActivityRaw.find(u => u._id === dateStr)?.count || 0;
+    
+    activityData.push({
+      name: days[d.getDay()],
+      users: userCount,
+      signups: userCount, // for weeklyTraffic mapping
+      items: itemCount,
+      listings: itemCount // for weeklyTraffic mapping
+    });
+  }
+
+  // Format reportsData (last 6 months)
+  const reportsData = [];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(today.getMonth() - i);
+    const m = d.getMonth() + 1;
+    const y = d.getFullYear();
+    
+    const pending = reportTrendsRaw.find(r => r._id.month === m && r._id.year === y && r._id.status === 'pending')?.count || 0;
+    const resolved = reportTrendsRaw.find(r => r._id.month === m && r._id.year === y && r._id.status === 'resolved')?.count || 0;
+    const dismissed = reportTrendsRaw.find(r => r._id.month === m && r._id.year === y && r._id.status === 'dismissed')?.count || 0;
+    
+    reportsData.push({
+      name: monthNames[m - 1],
+      pending,
+      resolved,
+      dismissed,
+      reports: pending + resolved + dismissed // for moderationTrends
+    });
+  }
 
   res.status(200).json({
     success: true,
@@ -124,6 +208,10 @@ const getAdminSummary = asyncHandler(async (req, res, next) => {
         activeListings,
         activeAgreements,
       },
+      timeseries: {
+        activityData,
+        reportsData
+      }
     },
   });
 });

@@ -2,7 +2,7 @@
 const ErrorResponse = require("../utils/errorResponse");
 
 const notFound = (req, res, next) => {
-  const error = new ErrorResponse(`Route Not Found: ${req.originalUrl}`, 404);
+  const error = new ErrorResponse(`The requested resource could not be found.`, 404);
   next(error);
 };
 

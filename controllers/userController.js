@@ -17,7 +17,7 @@
 //   allowed fields and explicitly ignoring the rest.
 //
 // PUBLIC PROFILES:
-//   ShareHood needs public profiles so users can see who they are
+//   Lendly needs public profiles so users can see who they are
 //   borrowing from or lending to. However, we cannot expose sensitive
 //   data like emails or phone numbers. The getPublicProfile endpoint
 //   strips all sensitive data and only returns safe, community-building
@@ -27,7 +27,7 @@
 //   Avatar uploads use the same pattern as item images:
 //     1. Multer receives file in memory
 //     2. Convert buffer to data URI
-//     3. Upload to Cloudinary (in "sharehood/avatars" folder)
+//     3. Upload to Cloudinary (in "lendly/avatars" folder)
 //     4. Save URL and public_id to MongoDB
 //     5. Delete old avatar from Cloudinary (if replacing) to save space.
 // ============================================================
@@ -50,7 +50,7 @@ const uploadAvatarToCloudinary = (fileBuffer, mimetype) => {
     cloudinary.uploader.upload(
       dataUri,
       {
-        folder: "sharehood/avatars", // Dedicated folder for avatars
+        folder: "lendly/avatars", // Dedicated folder for avatars
         resource_type: "image",
         // Optional: Crop and compress avatars automatically
         transformation: [

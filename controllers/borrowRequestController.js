@@ -48,7 +48,7 @@ const { validateObjectId } = require("../utils/validator");
 // HELPER: Generate a unique agreement number
 // ============================================================
 // Format: SH-AGR-{timestamp}-{random4chars}
-//   SH     → ShareHood prefix
+//   SH     → Lendly prefix
 //   AGR    → Agreement type
 //   timestamp → milliseconds since epoch (unique per ms)
 //   random → 4 random hex chars (collision prevention)

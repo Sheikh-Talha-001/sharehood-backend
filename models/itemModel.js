@@ -99,10 +99,10 @@ const itemSchema = new mongoose.Schema(
     // Image Fields — We store the Cloudinary URL, not the file
     // -------------------------------------------------------
     // image: The public URL where the image can be viewed
-    //   e.g. "https://res.cloudinary.com/your-cloud/image/upload/v123/sharehood/abc.jpg"
+    //   e.g. "https://res.cloudinary.com/your-cloud/image/upload/v123/lendly/abc.jpg"
     //
     // imagePublicId: Cloudinary's unique identifier for the image
-    //   e.g. "sharehood/abc"
+    //   e.g. "lendly/abc"
     //   We need this to DELETE the image from Cloudinary later.
     //   Without it, deleted items would leave orphan files in the cloud.
     image: {
